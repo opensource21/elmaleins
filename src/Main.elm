@@ -10,14 +10,10 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Events exposing (..)
-import List exposing (range)
+import List exposing (drop, head, range)
 import Random
 
-
-
 -- MAIN
-
-
 main =
   Browser.element
     { init = init
@@ -26,10 +22,7 @@ main =
     , view = view
     }
 
-
-
 -- MODEL
-
 type alias Challenge =
     {
         faktorA: Int,
@@ -45,30 +38,27 @@ type alias SolvedChallenge =
 
 type alias Model =
   {
+        -- TODO niels 06.08.2020: Change to ListWithFirstElement or error-mechanism
         configA: List Int,
         configB: List Int,
         currentChallenge: Challenge,
-        solvedChallenges: List Challenge
+        solvedChallenges: List SolvedChallenge
   }
 
 getChallenge: Int -> Int -> Challenge
 getChallenge a b =
     Challenge a b (a*b)
 
+randomFactor: List Int -> Random.Generator Int
+randomFactor listOfFactors =
+    Random.uniform (Maybe.withDefault 0 (head listOfFactors)) (drop 1 listOfFactors)
+
 challengeGen :  List  Int -> List Int -> Random.Generator Challenge
 challengeGen  listOfAFactors  listOfBFactors =
     Random.map2
-        (\a b ->  getChallenge a b)  (randomFactor listOfAFactors) (randomFactor listOfBFactors)
-
-randomFactor: List Int -> Random.Generator Int
-randomFactor listOfFactors =
-    Random.uniform (first listOfFactors) (List.drop 1 listOfFactors)
-
-first: List Int -> Int
-first  list =
-    case List.head list of
-        Nothing -> 0
-        Just elem -> elem
+        (\a b ->  getChallenge a b)
+        (randomFactor listOfAFactors)
+        (randomFactor listOfBFactors)
 
 init : () -> (Model, Cmd Msg)
 init _ =
@@ -80,47 +70,35 @@ init _ =
     , Random.generate NewChallenge (challengeGen listA listB)
     )
 
-
-
 -- UPDATE
-
-
 type Msg
-  = Roll
+  = Next
   | NewChallenge Challenge
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Roll ->
+    Next ->
       ( model
-      , Cmd.none
+      , Random.generate NewChallenge (challengeGen model.configA model.configB)
       )
 
     NewChallenge newChallenge ->
-        ( { model  | currentChallenge = newChallenge}
-            , Cmd.none
+        ( { model  | currentChallenge = newChallenge},
+           Cmd.none
         )
 
-
-
 -- SUBSCRIPTIONS
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
 
-
-
 -- VIEW
-
-
 view : Model -> Html Msg
 view model =
   div []
     [ h1 [] [ text ((String.fromInt model.currentChallenge.faktorA) ++ " x " ++ (String.fromInt model.currentChallenge.faktorB) ++ " = " ++ (String.fromInt model.currentChallenge.result)) ]
-    , button [ onClick Roll ] [ text "Roll" ]
+    , button [ onClick Next ] [ text "Roll" ]
     ]
 
