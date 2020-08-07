@@ -44,7 +44,7 @@ type alias Model =
     {
         -- TODO niels 06.08.2020: Change to ListWithFirstElement or error-mechanism
         config: Config,
-        currentChallenge: Challenge,
+        currentChallenge: Maybe Challenge,
         remainingTime: Int,
         solvedChallenges: List Challenge
   }
@@ -70,13 +70,13 @@ init _ =
         listA = range 1 15
         listB = range 1 15
     in
-    ( Model (Config listA listB 20 False) (getChallenge 1 1) 0 []
-    , Random.generate NewChallenge (challengeGen listA listB)
+    ( Model (Config listA listB 20 False) Maybe.Nothing 0 []
+    , Cmd.none
     )
 
 -- UPDATE
 type Msg
-  = Next
+  = StartChallenges
   | NewChallenge Challenge
   | Tick Time.Posix
   | Solved
@@ -85,23 +85,23 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Next ->
+    StartChallenges ->
       ( model
       , Random.generate NewChallenge (challengeGen model.config.listA model.config.listB)
       )
 
     Solved ->
         -- TODO niels 07.08.2020: Move current-challenge to list
-        (model, Cmd.none)
+        ({model|currentChallenge = Nothing}, Cmd.none)
 
     NewChallenge newChallenge ->
-        ( { model  | currentChallenge = newChallenge, remainingTime = model.config.timeoutInSeconds },
+        ( { model  | currentChallenge = Just newChallenge, remainingTime = model.config.timeoutInSeconds },
            Cmd.none
         )
 
     Tick _ ->
         ( { model | remainingTime = model.remainingTime - 1 } |>
-             if model.remainingTime < 1 then
+             if model.remainingTime <= 1 then
                 update Solved
              else
                 (\m -> (m, Cmd.none))
@@ -111,13 +111,29 @@ update msg model =
 -- SUBSCRIPTIONS
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 1000 Tick
+    case model.currentChallenge of
+            Nothing ->
+                Sub.none
+            Just c ->
+                Time.every 1000 Tick
+
 
 -- VIEW
 view : Model -> Html Msg
 view model =
-  div []
-    [ h1 [] [ text ((String.fromInt model.currentChallenge.faktorA) ++ " x " ++ (String.fromInt model.currentChallenge.faktorB) ++ " = " ++ (String.fromInt model.currentChallenge.result)) ]
-    , button [ onClick Next ] [ text "Roll" ]
-    ]
+      div []
+        [ h1 [] [ text ((showMaybeChallenge model.currentChallenge) ++ " (" ++ String.fromInt model.remainingTime ++ ")") ]
+        , button [ onClick StartChallenges ] [ text "Roll" ]
+        ]
 
+showMaybeChallenge: Maybe Challenge -> String
+showMaybeChallenge challenge =
+    case challenge of
+        Nothing ->
+            "no current challenge"
+        Just c ->
+            showChallenge c
+
+showChallenge: Challenge -> String
+showChallenge challenge =
+    (String.fromInt challenge.faktorA) ++ " x " ++ (String.fromInt challenge.faktorB) ++ " = " ++ (String.fromInt challenge.result)
