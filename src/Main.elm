@@ -30,6 +30,9 @@ type alias Challenge =
         result: Int
     }
 
+type GeneratedChallenge = Challenge
+    | InvalidConfig String
+
 type alias SolvedChallenge =
     {
         challenge: Challenge,
@@ -53,12 +56,18 @@ randomFactor: List Int -> Random.Generator Int
 randomFactor listOfFactors =
     Random.uniform (Maybe.withDefault 0 (head listOfFactors)) (drop 1 listOfFactors)
 
-challengeGen :  List  Int -> List Int -> Random.Generator Challenge
+challengeGen :  List  Int -> List Int -> Random.Generator GeneratedChallenge
 challengeGen  listOfAFactors  listOfBFactors =
-    Random.map2
-        (\a b ->  getChallenge a b)
-        (randomFactor listOfAFactors)
-        (randomFactor listOfBFactors)
+    if (List.isEmpty listOfAFactors) then
+        Random.uniform (InvalidConfig "List of A factors shouldn't be empty") []
+     else if (List.isEmpty listOfBFactors) then
+        Random.uniform (InvalidConfig "List of B factors shouldn't be empty") []
+     else
+        Random.map2
+            (\a b ->  getChallenge a b)
+            (randomFactor listOfAFactors)
+            (randomFactor listOfBFactors)
+
 
 init : () -> (Model, Cmd Msg)
 init _ =
