@@ -32,6 +32,7 @@ type alias Challenge =
         solution: Maybe Int
     }
 
+-- TODO niels 08.08.2020: Config must become configurable.
 type alias Config =
     {
         listA: List Int,
@@ -66,6 +67,9 @@ challengeGen  listOfAFactors  listOfBFactors =
 
 init : () -> (Model, Cmd Msg)
 init _ =
+    -- TODO niels 08.08.2020: Local-Storage must be added.
+    -- https://elmprogramming.com/saving-app-state.html
+    -- https://package.elm-lang.org/packages/billstclair/elm-localstorage/latest/
     let
         listA = range 1 15
         listB = range 1 15
@@ -78,8 +82,9 @@ init _ =
 type Msg
   = StartChallenges
   | NewChallenge Challenge
-  | Tick Time.Posix
-  | Solved
+  | Tick Challenge Time.Posix
+  | Solved Challenge
+  -- TODO niels 08.08.2020: Update solution must be added.
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -90,19 +95,20 @@ update msg model =
       , Random.generate NewChallenge (challengeGen model.config.listA model.config.listB)
       )
 
-    Solved ->
-        -- TODO niels 07.08.2020: Move current-challenge to list
-        ({model|currentChallenge = Nothing}, Cmd.none)
+    Solved challenge ->
+        ({model|currentChallenge = Nothing, solvedChallenges = challenge :: model.solvedChallenges},
+        -- TODO niels 08.08.2020: If more than 3 errors stop otherwise StartChallenges
+        Cmd.none)
 
     NewChallenge newChallenge ->
         ( { model  | currentChallenge = Just newChallenge, remainingTime = model.config.timeoutInSeconds },
            Cmd.none
         )
 
-    Tick _ ->
+    Tick challenge _ ->
         ( { model | remainingTime = model.remainingTime - 1 } |>
              if model.remainingTime <= 1 then
-                update Solved
+                update (Solved challenge)
              else
                 (\m -> (m, Cmd.none))
         )
@@ -115,10 +121,11 @@ subscriptions model =
             Nothing ->
                 Sub.none
             Just c ->
-                Time.every 1000 Tick
+                Time.every 1000 (Tick c)
 
 
 -- VIEW
+-- TODO niels 08.08.2020: The complete View part must be written!
 view : Model -> Html Msg
 view model =
       div []
