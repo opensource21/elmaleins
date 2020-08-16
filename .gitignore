@@ -114,3 +114,4 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/elm,intellij
 /.idea/checkstyle-idea.xml
 .idea/PipelineViewerConfig.xml
+public/js/main.js
