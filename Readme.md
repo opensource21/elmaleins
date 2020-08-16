@@ -10,6 +10,10 @@ in German "Einmaleins".
 
 - Development call
 `elm make --debug src/Main.elm --output=public/js/main.js`
+or
+```shell script
+ while inotifywait -e close_write src/Main.elm; do elm make --debug src/Main.elm --output=public/js/main.js; done
+```
 
 - Production call
 `elm make --optimize src/Main.elm --output=public/js/main.js`

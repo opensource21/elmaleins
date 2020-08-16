@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
+import Html.Attributes as Attributes exposing (attribute, class, id, name, size, type_)
 import Html.Events exposing (..)
 import List exposing (drop, head, range)
 import Random
@@ -69,7 +70,7 @@ init _ =
         listA = range 1 15
         listB = range 1 15
     in
-    ( Model (Config listA listB 20 False False) Maybe.Nothing 0 []
+    ( Model (Config listA listB 20 False True) Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -123,10 +124,36 @@ subscriptions model =
 -- TODO niels 08.08.2020: The complete View part must be written!
 view : Model -> Html Msg
 view model =
-      div []
-        [ h1 [] [ text ((showMaybeChallenge model.currentChallenge) ++ " (" ++ String.fromInt model.remainingTime ++ ")") ]
+      div [class "container-sm"]
+        [ h1 [][text "1x1-Trainer"],
+         showConfiguration model,
+         p [][ text ((showMaybeChallenge model.currentChallenge) ++ " (" ++ String.fromInt model.remainingTime ++ ")") ]
         , button [ onClick StartChallenges ] [ text "Roll" ]
         ]
+
+showConfiguration : Model -> Html Msg
+showConfiguration model =
+    if model.config.show then
+       div [id "configuration"] [
+          h2 [] [text "Konfiguration"],
+          -- TODO niels 16.08.2020: Faktoren ergänzen
+          div [class "input-group", class "input-group-sm", class "mb-3"][
+              input [type_ "number", class "form-control", name "timeout", Attributes.min "2",  Attributes.max "30", size 2,
+                     attribute "aria-label" "Definiere den Timeout."] [],
+              div [class "input-group-append"] [
+                  span [class "input-group-text"][text " s Zeit "]
+              ],
+              div [class "input-group-text" ][
+                  input [type_ "checkbox", attribute "aria-label" "Umgekehrt"] []
+              ],
+              div [class "input-group-append"][
+                  span [class "input-group-text"][text " Umgekehrt"]
+              ]
+          ],
+          hr[][]
+       ]
+    else
+       text "No Config"
 
 showMaybeChallenge: Maybe Challenge -> String
 showMaybeChallenge challenge =
