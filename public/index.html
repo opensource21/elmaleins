@@ -20,59 +20,72 @@
         <p class="alert alert-danger" role="alert">Java-Script scheint ausgeschaltet! Die Anwendung funktioniert
             <strong>nur</strong> mit Java-Script.</p>
         <h1>1x1-Trainer</h1>
-        <h2>Konfiguration</h2>
-        <p><strong>Faktor A: </strong>2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4,
-            2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, </p>
-        <div class="input-group input-group-sm mb-3">
-            <input type="text" class="form-control" size="10" placeholder="3-5, 8" name="rangeA"
-                   aria-label="Faktoren für A"/>
-            <div class="input-group-append">
-                <button type="button" class="btn btn-success" name="addA">Hinzufügen</button>
-                <button type="button" class="btn btn-warning" name="removeA">Entfernen</button>
+        <div id="configuration">
+            <h2>Konfiguration</h2>
+            <p><strong>Faktor A: </strong>2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3,
+                4,
+                2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, </p>
+            <div class="input-group input-group-sm mb-3">
+                <input type="text" class="form-control" size="10" placeholder="3-5, 8" name="rangeA"
+                       aria-label="Faktoren für A"/>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-success" name="addA">Hinzufügen</button>
+                    <button type="button" class="btn btn-warning" name="removeA">Entfernen</button>
+                </div>
+            </div>
+            <p><strong>Faktor B: </strong>2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3,
+                4,
+                2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, </p>
+            <div class="input-group input-group-sm mb-3">
+                <input type="text" class="form-control" size="10" placeholder="3-5, 8" name="rangeB"
+                       aria-label="Faktor für B"/>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-success" name="addB" aria-label="Hinzufügen">Hinzufügen
+                    </button>
+                    <button type="button" class="btn btn-warning" name="removeB" aria-label="Entfernen">Entfernen
+                    </button>
+                </div>
+            </div>
+            <div class="input-group input-group-sm mb-3">
+                <input type="number" class="form-control" min="2" max="30" size="2" name="timeout"
+                       aria-label="Definiere den Timeout."/>
+                <div class="input-group-append">
+                    <span class="input-group-text"> s Zeit </span>
+                </div>
+                <div class="input-group-text">
+                    <input type="checkbox" aria-label="Umgekehrt"/>
+                </div>
+                <div class="input-group-append">
+                    <span class="input-group-text"> Umgekehrt</span>
+                </div>
+            </div>
+            <hr>
+        </div>
+        <div id="control">
+            <button type="button" class="btn btn-primary" name="config">Verdecke/Zeige Config</button>
+            <button type="button" class="btn btn-primary" name="start">Start</button>
+        </div>
+        <div id="challenge">
+            <h2>Aufgabe</h2>
+            <p>Noch 20 Sekunden</p>
+            <div class="input-group input-group-sm mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">4 x 6 = </span>
+                </div>
+                <input type="number" class="form-control" min="2" max="900" size="3" name="result"
+                       aria-label="Ergebnis"/>
+                <div class=" input-group-append">
+                    <button type="button" class="btn btn-success" name="next">Next</button>
+                </div>
             </div>
         </div>
-        <p><strong>Faktor B: </strong>2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4,
-            2, 3, 4, 2, 3, 4, 2, 3, 4, 2, 3, 4, </p>
-        <div class="input-group input-group-sm mb-3">
-            <input type="text" class="form-control" size="10" placeholder="3-5, 8" name="rangeB"
-                   aria-label="Faktor für B"/>
-            <div class="input-group-append">
-                <button type="button" class="btn btn-success" name="addB" aria-label="Hinzufügen">Hinzufügen</button>
-                <button type="button" class="btn btn-warning" name="removeB" aria-label="Entfernen">Entfernen</button>
-            </div>
+        <div id="results">
+            <hr>
+            <h2>Ergebnisse</h2>
+            <p>1 von 2 Richtig.</p>
+            <p class="alert alert-success" role="alert">Richtig 3 x 5 = 15</p>
+            <p class="alert alert-info" role="alert">Nicht ganz 3 x 5 = 15 und nicht 16</p>
         </div>
-        <div class="input-group input-group-sm mb-3">
-            <input type="number" class="form-control" min="2" max="30" size="2" name="timeout"
-                   aria-label="Definiere den Timeout."/>
-            <div class="input-group-append">
-                <span class="input-group-text"> s Zeit </span>
-            </div>
-            <div class="input-group-text">
-                <input type="checkbox" aria-label="Umgekehrt"/>
-            </div>
-            <div class="input-group-append">
-                <span class="input-group-text"> Umgekehrt</span>
-            </div>
-        </div>
-        <hr>
-        <button type="button" class="btn btn-primary" name="config">Verdecke/Zeige Config</button>
-        <button type="button" class="btn btn-primary" name="start">Start</button>
-        <h2>Aufgabe</h2>
-        <p>Noch 20 Sekunden</p>
-        <div class="input-group input-group-sm mb-3">
-            <div class="input-group-prepend">
-                <span class="input-group-text">4 x 6 = </span>
-            </div>
-            <input type="number" class="form-control" min="2" max="900" size="3" name="result" aria-label="Ergebnis"/>
-            <div class=" input-group-append">
-                <button type="button" class="btn btn-success" name="next">Next</button>
-            </div>
-        </div>
-        <hr>
-        <h2>Ergebnisse</h2>
-        <p>1 von 2 Richtig.</p>
-        <p class="alert alert-success" role="alert">Richtig 3 x 5 = 15</p>
-        <p class="alert alert-info" role="alert">Nicht ganz 3 x 5 = 15 und nicht 16</p>
     </div>
 </div>
 <script>
