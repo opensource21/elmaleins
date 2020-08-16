@@ -2,9 +2,9 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes as Attributes exposing (attribute, class, id, name, size, type_)
+import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_)
 import Html.Events exposing (..)
-import List exposing (drop, head, range)
+import List exposing (range)
 import Random
 import Time
 
@@ -26,11 +26,18 @@ type alias Challenge =
         result: Maybe Int
     }
 
+type alias FactorPool =
+    {
+        firstElement: Int,
+        furtherElements: List Int,
+        changes: String
+    }
+
 -- TODO niels 08.08.2020: Config must become configurable.
 type alias Config =
     {
-        listA: List Int,
-        listB: List Int,
+        poolA: FactorPool,
+        poolB: FactorPool,
         timeoutInSeconds: Int,
         -- for reverse Challenges we only show the result and the user must guess the factors.
         reverseChallenges: Bool,
@@ -39,7 +46,6 @@ type alias Config =
 
 type alias Model =
     {
-        -- TODO niels 06.08.2020: Change to ListWithFirstElement or error-mechanism
         config: Config,
         currentChallenge: Maybe Challenge,
         remainingTime: Int,
@@ -50,16 +56,16 @@ getChallenge: Int -> Int -> Challenge
 getChallenge a b =
     Challenge (Just a) (Just b) Nothing
 
-randomFactor: List Int -> Random.Generator Int
-randomFactor listOfFactors =
-    Random.uniform (Maybe.withDefault 0 (head listOfFactors)) (drop 1 listOfFactors)
+randomFactor: FactorPool -> Random.Generator Int
+randomFactor factorPool =
+    Random.uniform factorPool.firstElement factorPool.furtherElements
 
-challengeGen :  List  Int -> List Int -> Random.Generator Challenge
-challengeGen  listOfAFactors  listOfBFactors =
+challengeGen : FactorPool -> FactorPool -> Random.Generator Challenge
+challengeGen  factorPoolA  factorPoolB =
     Random.map2
         (\a b ->  getChallenge a b)
-        (randomFactor listOfAFactors)
-        (randomFactor listOfBFactors)
+        (randomFactor factorPoolA)
+        (randomFactor factorPoolB)
 
 init : () -> (Model, Cmd Msg)
 init _ =
@@ -67,10 +73,10 @@ init _ =
     -- https://elmprogramming.com/saving-app-state.html
     -- https://package.elm-lang.org/packages/billstclair/elm-localstorage/latest/
     let
-        listA = range 1 15
-        listB = range 1 15
+        listA = range 2 15
+        listB = range 10 15
     in
-    ( Model (Config listA listB 20 False True) Maybe.Nothing 0 []
+    ( Model (Config (FactorPool 1 listA "") (FactorPool 1 listB "") 20 False True) Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -88,7 +94,7 @@ update msg model =
   case msg of
     StartChallenges ->
       ( model
-      , Random.generate NewChallenge (challengeGen model.config.listA model.config.listB)
+      , Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
       )
 
     Solved challenge ->
@@ -136,7 +142,8 @@ showConfiguration model =
     if model.config.show then
        div [id "configuration"] [
           h2 [] [text "Konfiguration"],
-          -- TODO niels 16.08.2020: Faktoren ergänzen
+          showFactorConfig model.config.poolA "A",
+          showFactorConfig model.config.poolB "B",
           div [class "input-group", class "input-group-sm", class "mb-3"][
               input [type_ "number", class "form-control", name "timeout", Attributes.min "2",  Attributes.max "30", size 2,
                      attribute "aria-label" "Definiere den Timeout."] [],
@@ -154,6 +161,24 @@ showConfiguration model =
        ]
     else
        text "No Config"
+
+showFactorConfig: FactorPool -> String -> Html Msg
+showFactorConfig config configName=
+    div[id ("factor" ++ configName ++ "Config")][
+        p[][
+        strong [] [text ("Faktor " ++ configName ++ ": ")],
+        text (String.join ", " (List.map String.fromInt (config.firstElement :: config.furtherElements)))
+        ],
+        div [class "input-group", class "input-group-sm", class "mb-3"] [
+             input [type_ "text", class "form-control", size 10, placeholder "3-5, 8", Attributes.name ("range_" ++  configName),
+                          attribute "aria-label" ("Faktoren für " ++ configName)][],
+             div [class "input-group-append"] [
+                button [type_ "button", class "btn", class "btn-success", name ("add_" ++  configName)][text "Hinzufügen"],
+                button [type_ "button", class "btn", class "btn-warning", name ("remove_" ++  configName)][text "Entfernen"]
+            ]
+        ]
+    ]
+
 
 showMaybeChallenge: Maybe Challenge -> String
 showMaybeChallenge challenge =
