@@ -1,11 +1,4 @@
 module Main exposing (..)
--- Press a button to generate a random number between 1 and 6.
---
--- Read how it works:
---   https://guide.elm-lang.org/effects/random.html
---
--- https://medium.com/elm-shorts/updating-nested-records-in-elm-15d162e80480
-
 
 import Browser
 import Html exposing (..)
@@ -24,12 +17,12 @@ main =
     }
 
 -- MODEL
+-- Maybe because we wan't to allow each at input, which could be empty.
 type alias Challenge =
     {
-        faktorA: Int,
-        faktorB: Int,
-        result: Int,
-        solution: Maybe Int
+        faktorA: Maybe Int,
+        faktorB: Maybe Int,
+        result: Maybe Int
     }
 
 -- TODO niels 08.08.2020: Config must become configurable.
@@ -38,6 +31,8 @@ type alias Config =
         listA: List Int,
         listB: List Int,
         timeoutInSeconds: Int,
+        -- for reverse Challenges we only show the result and the user must guess the factors.
+        reverseChallenges: Bool,
         show: Bool
     }
 
@@ -52,7 +47,7 @@ type alias Model =
 
 getChallenge: Int -> Int -> Challenge
 getChallenge a b =
-    Challenge a b (a*b) Nothing
+    Challenge (Just a) (Just b) Nothing
 
 randomFactor: List Int -> Random.Generator Int
 randomFactor listOfFactors =
@@ -74,7 +69,7 @@ init _ =
         listA = range 1 15
         listB = range 1 15
     in
-    ( Model (Config listA listB 20 False) Maybe.Nothing 0 []
+    ( Model (Config listA listB 20 False False) Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -143,4 +138,8 @@ showMaybeChallenge challenge =
 
 showChallenge: Challenge -> String
 showChallenge challenge =
-    (String.fromInt challenge.faktorA) ++ " x " ++ (String.fromInt challenge.faktorB) ++ " = " ++ (String.fromInt challenge.result)
+    (maybeIntToString challenge.faktorA) ++ " x " ++ (maybeIntToString challenge.faktorB) ++ " = " ++ (maybeIntToString challenge.result)
+
+maybeIntToString: Maybe Int -> String
+maybeIntToString maybeInt =
+    Maybe.withDefault "" (Maybe.map String.fromInt maybeInt)
