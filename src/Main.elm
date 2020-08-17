@@ -104,6 +104,7 @@ init _ =
 
 type Msg
     = StartChallenges
+    | StopChallenges
     | NewChallenge Challenge
     | Tick Challenge Time.Posix
     | Solved Challenge
@@ -137,6 +138,9 @@ update msg model =
             ( { model | solvedChallenges = [] }
             , Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
             )
+
+        StopChallenges ->
+            ( { model | currentChallenge = Nothing }, Cmd.none )
 
         Result challenge result ->
             let
@@ -283,7 +287,12 @@ showControl model =
           else
             button [ type_ "button", class "btn", class "btn-primary", name "show", onClick (ShowConfig model.config) ] [ text "Zeige Config" ]
         , text " "
-        , button [ type_ "button", class "btn", class "btn-primary", name "start", onClick StartChallenges ] [ text "Start" ]
+        , case model.currentChallenge of
+            Nothing ->
+                button [ type_ "button", class "btn", class "btn-primary", name "start", onClick StartChallenges ] [ text "Start" ]
+
+            Just _ ->
+                button [ type_ "button", class "btn", class "btn-primary", name "start", onClick StopChallenges ] [ text "Stop" ]
         ]
 
 
