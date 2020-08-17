@@ -2,7 +2,12 @@
 
 Small elm-app to learn [elm](https://elm-lang.org/) and build a side, 
 where you can train the multiplication table, 
-in German "Einmaleins". 
+in German "Einmaleins". You can test it [online](http://opensource21.github.io/elmaleins/)
+
+## Known Bugs
+- You can't save the config
+- You can only change the timeout in config
+- reverse-mode must be implememted
 
 ## How to run
 - Development with reactor doesn't work anymore see 
