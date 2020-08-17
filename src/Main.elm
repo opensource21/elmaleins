@@ -112,10 +112,6 @@ type Msg
     | Result Challenge String
 
 
-
--- TODO niels 08.08.2020: Update solution must be added.
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -134,7 +130,7 @@ update msg model =
             ( { model | config = newConfig }, Cmd.none )
 
         StartChallenges ->
-            ( model
+            ( { model | solvedChallenges = [] }
             , Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
             )
 
@@ -147,8 +143,11 @@ update msg model =
 
         Solved challenge ->
             ( { model | currentChallenge = Nothing, solvedChallenges = challenge :: model.solvedChallenges }
-            , -- TODO niels 08.08.2020: If more than 3 errors stop otherwise StartChallenges
-              Cmd.none
+            , if numberOfWrongChallenges (challenge :: model.solvedChallenges) < 3 then
+                Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
+
+              else
+                Cmd.none
             )
 
         NewChallenge newChallenge ->
