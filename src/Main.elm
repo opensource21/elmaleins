@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_)
+import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_, value)
 import Html.Events exposing (..)
 import List exposing (range)
 import Random
@@ -88,12 +88,12 @@ init _ =
     -- https://package.elm-lang.org/packages/billstclair/elm-localstorage/latest/
     let
         listA =
-            range 2 15
+            range 3 14
 
         listB =
-            range 10 15
+            range 10 14
     in
-    ( Model (Config (FactorPool 1 listA "") (FactorPool 1 listB "") 20 False True) Maybe.Nothing 0 []
+    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 False False) Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -110,11 +110,15 @@ type Msg
     | ShowConfig Config
     | HideConfig Config
     | Result Challenge String
+    | ChangeTimeout String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ChangeTimeout newTime ->
+            ( { model | config = setTimeoutInSeconds model.config (String.toInt newTime) }, Cmd.none )
+
         ShowConfig config ->
             let
                 newConfig =
@@ -165,6 +169,16 @@ update msg model =
                    )
 
 
+setTimeoutInSeconds : Config -> Maybe Int -> Config
+setTimeoutInSeconds config newTime =
+    case newTime of
+        Nothing ->
+            config
+
+        Just time ->
+            { config | timeoutInSeconds = time }
+
+
 
 -- SUBSCRIPTIONS
 
@@ -210,6 +224,8 @@ showConfiguration model =
                     , Attributes.max "30"
                     , size 2
                     , attribute "aria-label" "Definiere den Timeout."
+                    , onInput ChangeTimeout
+                    , value (String.fromInt model.config.timeoutInSeconds)
                     ]
                     []
                 , div [ class "input-group-append" ]
