@@ -14,6 +14,8 @@ or
 ```shell script
  while inotifywait -e close_write src/Main.elm; do elm make --debug src/Main.elm --output=public/js/main.js; done
 ```
+or with elm-live
+ `/home/niels/node_modules/elm-live/bin/elm-live.js src/Main.elm -d public -- --output=public/js/main.js`
 
 - Production call
 `elm make --optimize src/Main.elm --output=public/js/main.js`

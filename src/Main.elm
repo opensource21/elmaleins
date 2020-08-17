@@ -42,7 +42,7 @@ type alias FactorPool =
 
 
 
--- TODO niels 08.08.2020: Config must become configurable.
+-- TODO niels 08.08.2020: Config must become persistent.
 
 
 type alias Config =
@@ -107,6 +107,9 @@ type Msg
     | NewChallenge Challenge
     | Tick Challenge Time.Posix
     | Solved Challenge
+    | ShowConfig Config
+    | HideConfig Config
+    | Result Challenge String
 
 
 
@@ -116,10 +119,31 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ShowConfig config ->
+            let
+                newConfig =
+                    { config | show = True }
+            in
+            ( { model | config = newConfig }, Cmd.none )
+
+        HideConfig config ->
+            let
+                newConfig =
+                    { config | show = False }
+            in
+            ( { model | config = newConfig }, Cmd.none )
+
         StartChallenges ->
             ( model
             , Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
             )
+
+        Result challenge result ->
+            let
+                newChallenge =
+                    Just { challenge | result = String.toInt result }
+            in
+            ( { model | currentChallenge = newChallenge }, Cmd.none )
 
         Solved challenge ->
             ( { model | currentChallenge = Nothing, solvedChallenges = challenge :: model.solvedChallenges }
@@ -158,7 +182,6 @@ subscriptions model =
 
 
 -- VIEW
--- TODO niels 08.08.2020: The complete View part must be written!
 
 
 view : Model -> Html Msg
@@ -166,8 +189,9 @@ view model =
     div [ class "container-sm" ]
         [ h1 [] [ text "1x1-Trainer" ]
         , showConfiguration model
-        , p [] [ text (showMaybeChallenge model.currentChallenge ++ " (" ++ String.fromInt model.remainingTime ++ ")") ]
-        , button [ onClick StartChallenges ] [ text "Roll" ]
+        , showControl model
+        , showMaybeChallenge model
+        , showResults model
         ]
 
 
@@ -203,7 +227,11 @@ showConfiguration model =
             ]
 
     else
-        text "No Config"
+        text ""
+
+
+
+-- TODO niels 17.08.2020: Input and Button needs Actions.
 
 
 showFactorConfig : FactorPool -> String -> Html Msg
@@ -231,19 +259,127 @@ showFactorConfig config configName =
         ]
 
 
-showMaybeChallenge : Maybe Challenge -> String
-showMaybeChallenge challenge =
-    case challenge of
+showControl : Model -> Html Msg
+showControl model =
+    div [ id "control" ]
+        [ if model.config.show then
+            button [ type_ "button", class "btn", class "btn-primary", name "hide", onClick (HideConfig model.config) ] [ text "Verdecke Config" ]
+
+          else
+            button [ type_ "button", class "btn", class "btn-primary", name "show", onClick (ShowConfig model.config) ] [ text "Zeige Config" ]
+        , text " "
+        , button [ type_ "button", class "btn", class "btn-primary", name "start", onClick StartChallenges ] [ text "Start" ]
+        ]
+
+
+showMaybeChallenge : Model -> Html Msg
+showMaybeChallenge model =
+    case model.currentChallenge of
         Nothing ->
-            "no current challenge"
+            text ""
 
         Just c ->
-            showChallenge c
+            showCurrentChallenge c model.remainingTime
 
 
-showChallenge : Challenge -> String
-showChallenge challenge =
-    maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = " ++ maybeIntToString challenge.result
+
+-- TODO niels 17.08.2020: Reverse must be implememted.
+
+
+showCurrentChallenge : Challenge -> Int -> Html Msg
+showCurrentChallenge challenge remainingTime =
+    div [ id "challenge" ]
+        [ h2 [] [ text "Aufgabe" ]
+        , p [] [ text ("Noch " ++ String.fromInt remainingTime ++ " Sekunden") ]
+        , div [ class "input-group", class "input-group-sm", class "mb-3" ]
+            [ div [ class "input-group-prepend" ]
+                [ span [ class "input-group-text" ] [ text (maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = ") ]
+                ]
+            , input [ type_ "number", class "form-control", Attributes.min "2", Attributes.max "900", size 3, name "result", attribute "aria-label" "Ergebnis", onInput (Result challenge) ] []
+            , div [ class "input-group-append" ]
+                [ button [ type_ "button", class "btn", class "btn-success", name "next", onClick (Solved challenge) ] [ text "Abgeben" ]
+                ]
+            ]
+        ]
+
+
+showResults : Model -> Html Msg
+showResults model =
+    if List.isEmpty model.solvedChallenges then
+        text ""
+
+    else
+        div [ id "results" ]
+            ([ hr [] []
+             , h2 [] [ text "Ergebnisse" ]
+             , showSuccessRate model.solvedChallenges
+             ]
+                ++ showSolvedChallenges model.solvedChallenges
+            )
+
+
+showSuccessRate : List Challenge -> Html Msg
+showSuccessRate challenges =
+    p [] [ text (String.fromInt (numberOfCorrectChallenges challenges) ++ " von " ++ String.fromInt (List.length challenges) ++ " Richtig.") ]
+
+
+showSolvedChallenges : List Challenge -> List (Html Msg)
+showSolvedChallenges challenges =
+    List.map showSolvedChallenge challenges
+
+
+showSolvedChallenge : Challenge -> Html Msg
+showSolvedChallenge challenge =
+    if challengeResultCorrect challenge then
+        p [ class "alert", class "alert-success", attribute "role" "alert" ]
+            [ text ("Richtig " ++ challengeToString challenge)
+            ]
+
+    else
+        p [ class "alert", class "alert-info", attribute "role" "alert" ]
+            [ text ("Nicht ganz " ++ challengeToString challenge ++ " und nicht " ++ maybeIntToString challenge.result)
+            ]
+
+
+numberOfWrongChallenges : List Challenge -> Int
+numberOfWrongChallenges challenges =
+    List.length (List.filter challengeResultWrong challenges)
+
+
+numberOfCorrectChallenges : List Challenge -> Int
+numberOfCorrectChallenges challenges =
+    List.length (List.filter challengeResultCorrect challenges)
+
+
+challengeResultCorrect : Challenge -> Bool
+challengeResultCorrect challenge =
+    Maybe.withDefault 0 challenge.faktorA * Maybe.withDefault 0 challenge.faktorB == Maybe.withDefault -1 challenge.result
+
+
+challengeResultWrong : Challenge -> Bool
+challengeResultWrong challenge =
+    not (challengeResultCorrect challenge)
+
+
+challengeToString : Challenge -> String
+challengeToString challenge =
+    maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = " ++ maybeIntToString (calcResult challenge)
+
+
+calcResult : Challenge -> Maybe Int
+calcResult challenge =
+    case ( challenge.faktorA, challenge.faktorB ) of
+        ( Nothing, Nothing ) ->
+            Nothing
+
+        ( Nothing, Just _ ) ->
+            Nothing
+
+        ( Just _, Nothing ) ->
+            Nothing
+
+        ( Just a, Just b ) ->
+            Just (a * b)
 
 
 maybeIntToString : Maybe Int -> String
