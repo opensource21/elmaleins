@@ -310,7 +310,18 @@ showCurrentChallenge challenge remainingTime =
             [ div [ class "input-group-prepend" ]
                 [ span [ class "input-group-text" ] [ text (maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = ") ]
                 ]
-            , input [ type_ "number", class "form-control", Attributes.min "2", Attributes.max "900", size 3, name "result", attribute "aria-label" "Ergebnis", onInput (Result challenge) ] []
+            , input
+                [ type_ "number"
+                , class "form-control"
+                , Attributes.min "2"
+                , Attributes.max "900"
+                , size 3
+                , name "result"
+                , attribute "aria-label" "Ergebnis"
+                , value (maybeIntToString challenge.result)
+                , onInput (Result challenge)
+                ]
+                []
             , div [ class "input-group-append" ]
                 [ button [ type_ "button", class "btn", class "btn-success", name "next", onClick (Solved challenge) ] [ text "Abgeben" ]
                 ]
