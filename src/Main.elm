@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_, value)
@@ -181,6 +182,54 @@ setTimeoutInSeconds config newTime =
 
         Just time ->
             { config | timeoutInSeconds = time }
+
+
+{-| Convert a list definition to a list of int.
+convertToList "1, 3-5" == [1,3,4,5]
+-}
+convertToList : String -> List Int
+convertToList definition =
+    List.sort (List.foldl List.append [] (List.map convertElementToList (List.map String.trim (String.split "," definition))))
+
+
+{-| Convert 1 to [1] or 1-2 to range 1 2
+convertElementToList "1-3" == [1,2,3]
+-}
+convertElementToList : String -> List Int
+convertElementToList definition =
+    if String.contains "-" definition then
+        convertToRange (Array.fromList (List.filterMap String.toInt (List.map String.trim (String.split "-" definition))))
+
+    else
+        case String.toInt definition of
+            Nothing ->
+                []
+
+            Just i ->
+                [ i ]
+
+
+convertToRange : Array Int -> List Int
+convertToRange array =
+    let
+        a =
+            Array.get 0 array
+
+        b =
+            Array.get 1 array
+    in
+    case ( a, b ) of
+        ( Nothing, Nothing ) ->
+            []
+
+        ( Nothing, Just end ) ->
+            [ end ]
+
+        ( Just start, Nothing ) ->
+            [ start ]
+
+        ( Just start, Just end ) ->
+            List.range start end
 
 
 
