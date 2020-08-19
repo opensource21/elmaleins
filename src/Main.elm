@@ -402,7 +402,8 @@ showFactorConfig pool configName changeMsg addMsg rmMsg =
             ]
         , div [ class "input-group", class "input-group-sm", class "mb-3" ]
             [ input
-                [ type_ "text"
+                [ type_ "tel"
+                , attribute "inputmode" "decimal"
                 , class "form-control"
                 , size 10
                 , placeholder "3-5, 8"
@@ -513,7 +514,7 @@ showSolvedChallenge challenge =
             ]
 
     else
-        p [ class "alert", class "alert-info", attribute "role" "alert" ]
+        p [ class "alert", class "alert-warning", attribute "role" "alert" ]
             [ text ("Nicht ganz " ++ challengeToString challenge ++ " und nicht " ++ maybeIntToString challenge.result)
             ]
 
