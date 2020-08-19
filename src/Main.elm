@@ -219,7 +219,7 @@ init _ =
         listB =
             range 10 14
     in
-    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 True True) Maybe.Nothing 0 []
+    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 False False) Maybe.Nothing 0 []
     , Cmd.none
     )
 
