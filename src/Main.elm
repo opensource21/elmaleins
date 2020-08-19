@@ -42,6 +42,68 @@ type alias FactorPool =
     }
 
 
+setChanges : String -> FactorPool -> FactorPool
+setChanges newChanges pool =
+    { pool | changes = newChanges }
+
+
+addChanges : FactorPool -> FactorPool
+addChanges pool =
+    { pool | furtherElements = List.append pool.furtherElements (convertToList pool.changes), changes = "" }
+
+
+removeChanges : FactorPool -> FactorPool
+removeChanges pool =
+    List.foldl removeElement { pool | changes = "" } (convertToList pool.changes)
+
+
+{-| Remove the search element from pool only once.
+-}
+removeElement : Int -> FactorPool -> FactorPool
+removeElement search pool =
+    case pool.furtherElements of
+        [] ->
+            pool
+
+        first :: others ->
+            if pool.firstElement == search then
+                { pool | firstElement = first, furtherElements = others }
+
+            else
+                { pool | furtherElements = removeFromList search pool.furtherElements }
+
+
+{-| Remove the first occurrence of a value from a list.
+-}
+removeFromList : a -> List a -> List a
+removeFromList search list =
+    case list of
+        [] ->
+            []
+
+        first :: other ->
+            if first == search then
+                other
+
+            else
+                first :: removeFromList search other
+
+
+setPoolA : FactorPool -> Config -> Config
+setPoolA pool config =
+    { config | poolA = pool }
+
+
+setPoolB : FactorPool -> Config -> Config
+setPoolB pool config =
+    { config | poolB = pool }
+
+
+setConfig : Config -> Model -> Model
+setConfig newConfig model =
+    { model | config = newConfig }
+
+
 
 -- TODO niels 08.08.2020: Config must become persistent.
 
@@ -54,6 +116,69 @@ type alias Config =
       reverseChallenges : Bool
     , show : Bool
     }
+
+
+setTimeoutInSeconds : Config -> Maybe Int -> Config
+setTimeoutInSeconds config newTime =
+    case newTime of
+        Nothing ->
+            config
+
+        Just time ->
+            { config | timeoutInSeconds = time }
+
+
+setReverse : Config -> Bool -> Config
+setReverse config newReverse =
+    { config | reverseChallenges = newReverse }
+
+
+{-| Convert a list definition to a list of int.
+convertToList "1, 3-5" == [1,3,4,5]
+-}
+convertToList : String -> List Int
+convertToList definition =
+    List.sort (List.foldl List.append [] (List.map convertElementToList (List.map String.trim (String.split "," definition))))
+
+
+{-| Convert 1 to [1] or 1-2 to range 1 2
+convertElementToList "1-3" == [1,2,3]
+-}
+convertElementToList : String -> List Int
+convertElementToList definition =
+    if String.contains "-" definition then
+        convertToRange (Array.fromList (List.filterMap String.toInt (List.map String.trim (String.split "-" definition))))
+
+    else
+        case String.toInt definition of
+            Nothing ->
+                []
+
+            Just i ->
+                [ i ]
+
+
+convertToRange : Array Int -> List Int
+convertToRange array =
+    let
+        a =
+            Array.get 0 array
+
+        b =
+            Array.get 1 array
+    in
+    case ( a, b ) of
+        ( Nothing, Nothing ) ->
+            []
+
+        ( Nothing, Just end ) ->
+            [ end ]
+
+        ( Just start, Nothing ) ->
+            [ start ]
+
+        ( Just start, Just end ) ->
+            List.range start end
 
 
 type alias Model =
@@ -94,7 +219,7 @@ init _ =
         listB =
             range 10 14
     in
-    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 False False) Maybe.Nothing 0 []
+    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 True True) Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -109,10 +234,17 @@ type Msg
     | NewChallenge Challenge
     | Tick Challenge Time.Posix
     | Solved Challenge
+    | Result Challenge String
     | ShowConfig Config
     | HideConfig Config
-    | Result Challenge String
     | ChangeTimeout String
+    | ChangeReverse Bool
+    | AddToPoolA
+    | RemoveFromPoolA
+    | ChangesPoolA String
+    | AddToPoolB
+    | RemoveFromPoolB
+    | ChangesPoolB String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -120,6 +252,27 @@ update msg model =
     case msg of
         ChangeTimeout newTime ->
             ( { model | config = setTimeoutInSeconds model.config (String.toInt newTime) }, Cmd.none )
+
+        ChangeReverse newReverse ->
+            ( { model | config = setReverse model.config newReverse }, Cmd.none )
+
+        ChangesPoolA input ->
+            ( model |> setConfig (model.config |> setPoolA (model.config.poolA |> setChanges input)), Cmd.none )
+
+        ChangesPoolB input ->
+            ( model |> setConfig (model.config |> setPoolB (model.config.poolB |> setChanges input)), Cmd.none )
+
+        AddToPoolA ->
+            ( model |> setConfig (model.config |> setPoolA (model.config.poolA |> addChanges)), Cmd.none )
+
+        RemoveFromPoolA ->
+            ( model |> setConfig (model.config |> setPoolA (model.config.poolA |> removeChanges)), Cmd.none )
+
+        AddToPoolB ->
+            ( model |> setConfig (model.config |> setPoolB (model.config.poolB |> addChanges)), Cmd.none )
+
+        RemoveFromPoolB ->
+            ( model |> setConfig (model.config |> setPoolB (model.config.poolB |> removeChanges)), Cmd.none )
 
         ShowConfig config ->
             let
@@ -174,64 +327,6 @@ update msg model =
                    )
 
 
-setTimeoutInSeconds : Config -> Maybe Int -> Config
-setTimeoutInSeconds config newTime =
-    case newTime of
-        Nothing ->
-            config
-
-        Just time ->
-            { config | timeoutInSeconds = time }
-
-
-{-| Convert a list definition to a list of int.
-convertToList "1, 3-5" == [1,3,4,5]
--}
-convertToList : String -> List Int
-convertToList definition =
-    List.sort (List.foldl List.append [] (List.map convertElementToList (List.map String.trim (String.split "," definition))))
-
-
-{-| Convert 1 to [1] or 1-2 to range 1 2
-convertElementToList "1-3" == [1,2,3]
--}
-convertElementToList : String -> List Int
-convertElementToList definition =
-    if String.contains "-" definition then
-        convertToRange (Array.fromList (List.filterMap String.toInt (List.map String.trim (String.split "-" definition))))
-
-    else
-        case String.toInt definition of
-            Nothing ->
-                []
-
-            Just i ->
-                [ i ]
-
-
-convertToRange : Array Int -> List Int
-convertToRange array =
-    let
-        a =
-            Array.get 0 array
-
-        b =
-            Array.get 1 array
-    in
-    case ( a, b ) of
-        ( Nothing, Nothing ) ->
-            []
-
-        ( Nothing, Just end ) ->
-            [ end ]
-
-        ( Just start, Nothing ) ->
-            [ start ]
-
-        ( Just start, Just end ) ->
-            List.range start end
-
-
 
 -- SUBSCRIPTIONS
 
@@ -266,8 +361,8 @@ showConfiguration model =
     if model.config.show then
         div [ id "configuration" ]
             [ h2 [] [ text "Konfiguration" ]
-            , showFactorConfig model.config.poolA "A"
-            , showFactorConfig model.config.poolB "B"
+            , showFactorConfig model.config.poolA "A" ChangesPoolA AddToPoolA RemoveFromPoolA
+            , showFactorConfig model.config.poolB "B" ChangesPoolB AddToPoolB RemoveFromPoolB
             , div [ class "input-group", class "input-group-sm", class "mb-3" ]
                 [ input
                     [ type_ "number"
@@ -285,7 +380,7 @@ showConfiguration model =
                     [ span [ class "input-group-text" ] [ text " s Zeit " ]
                     ]
                 , div [ class "input-group-text" ]
-                    [ input [ type_ "checkbox", attribute "aria-label" "Umgekehrt" ] []
+                    [ input [ type_ "checkbox", attribute "aria-label" "Umgekehrt", Attributes.checked model.config.reverseChallenges, onClick (ChangeReverse (not model.config.reverseChallenges)) ] []
                     ]
                 , div [ class "input-group-append" ]
                     [ span [ class "input-group-text" ] [ text " Umgekehrt" ]
@@ -298,16 +393,12 @@ showConfiguration model =
         text ""
 
 
-
--- TODO niels 17.08.2020: Input and Button needs Actions.
-
-
-showFactorConfig : FactorPool -> String -> Html Msg
-showFactorConfig config configName =
+showFactorConfig : FactorPool -> String -> (String -> Msg) -> Msg -> Msg -> Html Msg
+showFactorConfig pool configName changeMsg addMsg rmMsg =
     div [ id ("factor" ++ configName ++ "Config") ]
         [ p []
             [ strong [] [ text ("Faktor " ++ configName ++ ": ") ]
-            , text (String.join ", " (List.map String.fromInt (config.firstElement :: config.furtherElements)))
+            , text (String.join ", " (List.map String.fromInt (List.sort (pool.firstElement :: pool.furtherElements))))
             ]
         , div [ class "input-group", class "input-group-sm", class "mb-3" ]
             [ input
@@ -317,11 +408,13 @@ showFactorConfig config configName =
                 , placeholder "3-5, 8"
                 , Attributes.name ("range_" ++ configName)
                 , attribute "aria-label" ("Faktoren für " ++ configName)
+                , onInput changeMsg
+                , value pool.changes
                 ]
                 []
             , div [ class "input-group-append" ]
-                [ button [ type_ "button", class "btn", class "btn-success", name ("add_" ++ configName) ] [ text "Hinzufügen" ]
-                , button [ type_ "button", class "btn", class "btn-warning", name ("remove_" ++ configName) ] [ text "Entfernen" ]
+                [ button [ type_ "button", class "btn", class "btn-success", name ("add_" ++ configName), onClick addMsg ] [ text "Hinzufügen" ]
+                , button [ type_ "button", class "btn", class "btn-warning", name ("remove_" ++ configName), onClick rmMsg ] [ text "Entfernen" ]
                 ]
             ]
         ]
@@ -356,7 +449,7 @@ showMaybeChallenge model =
 
 
 
--- TODO niels 17.08.2020: Reverse must be implememted.
+-- TODO niels 17.08.2020: Reverse must be implemented.
 
 
 showCurrentChallenge : Challenge -> Int -> Html Msg

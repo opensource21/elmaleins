@@ -6,8 +6,10 @@ in German "Einmaleins". You can test it [online](http://opensource21.github.io/e
 
 ## Known Bugs
 - You can't save the config
-- You can only change the timeout in config
-- reverse-mode must be implememted
+- reverse-mode must be implemented
+
+## Future Features
+- Prevent duplicate challenges
 
 ## How to run
 - Development with reactor doesn't work anymore see 
