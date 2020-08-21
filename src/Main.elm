@@ -305,7 +305,7 @@ update msg model =
 
         Solved challenge ->
             ( { model | currentChallenge = Nothing, solvedChallenges = challenge :: model.solvedChallenges }
-            , if numberOfWrongChallenges (challenge :: model.solvedChallenges) < 3 then
+            , if count challengeResultWrong (challenge :: model.solvedChallenges) < 3 then
                 Random.generate NewChallenge (challengeGen model.config.poolA model.config.poolB)
 
               else
@@ -498,7 +498,7 @@ showResults model =
 
 showSuccessRate : List Challenge -> Html Msg
 showSuccessRate challenges =
-    p [] [ text (String.fromInt (numberOfCorrectChallenges challenges) ++ " von " ++ String.fromInt (List.length challenges) ++ " Richtig.") ]
+    p [] [ text (String.fromInt (count challengeResultCorrect challenges) ++ " von " ++ String.fromInt (List.length challenges) ++ " Richtig.") ]
 
 
 showSolvedChallenges : List Challenge -> List (Html Msg)
@@ -519,14 +519,9 @@ showSolvedChallenge challenge =
             ]
 
 
-numberOfWrongChallenges : List Challenge -> Int
-numberOfWrongChallenges challenges =
-    List.length (List.filter challengeResultWrong challenges)
-
-
-numberOfCorrectChallenges : List Challenge -> Int
-numberOfCorrectChallenges challenges =
-    List.length (List.filter challengeResultCorrect challenges)
+count : (a -> Bool) -> List a -> Int
+count predicate challenges =
+    List.length (List.filter predicate challenges)
 
 
 challengeResultCorrect : Challenge -> Bool
