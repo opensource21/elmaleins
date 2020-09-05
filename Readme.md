@@ -10,9 +10,6 @@ in German "Einmaleins". You can test it [online](http://opensource21.github.io/e
 ## Future Features
 - Prevent duplicate challenges
 
-## TODO
-The file is pretty large seems time to split the whole stuff.  
-
 ## How to run
 - Development with reactor doesn't work anymore see 
 [stackoverflow for oldapproaches](https://stackoverflow.com/questions/41333765/using-elm-reactor-with-elm-embedded-in-html)
