@@ -95,8 +95,14 @@
     </div>
 </div>
 <script>
-    Elm.Main.init({
-        node: document.getElementById('myapp')
+    var app = Elm.Main.init({
+        node: document.getElementById("myapp")
+    });
+    app.ports.storeConfig.subscribe(function (config) {
+        if (config.length > 0) {
+            const configJson = JSON.stringify(config);
+            localStorage.setItem('elmaleins-config', configJson);
+        }
     });
 </script>
 

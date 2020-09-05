@@ -5,7 +5,9 @@ import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_, value)
 import Html.Events exposing (..)
+import Json.Encode as Encode
 import List exposing (range)
+import Ports
 import Random
 import Time
 
@@ -286,7 +288,7 @@ update msg model =
                 newConfig =
                     { config | show = False }
             in
-            ( { model | config = newConfig }, Cmd.none )
+            ( { model | config = newConfig }, saveConfig newConfig )
 
         StartChallenges ->
             ( { model | solvedChallenges = [] }
@@ -425,7 +427,7 @@ showControl : Model -> Html Msg
 showControl model =
     div [ id "control" ]
         [ if model.config.show then
-            button [ type_ "button", class "btn", class "btn-primary", name "hide", onClick (HideConfig model.config) ] [ text "Verdecke Config" ]
+            button [ type_ "button", class "btn", class "btn-primary", name "hide", onClick (HideConfig model.config) ] [ text "Verdecke und Speichere Config" ]
 
           else
             button [ type_ "button", class "btn", class "btn-primary", name "show", onClick (ShowConfig model.config) ] [ text "Zeige Config" ]
@@ -558,3 +560,46 @@ calcResult challenge =
 maybeIntToString : Maybe Int -> String
 maybeIntToString maybeInt =
     Maybe.withDefault "" (Maybe.map String.fromInt maybeInt)
+
+
+
+-- Ports
+
+
+saveConfig : Config -> Cmd msg
+saveConfig config =
+    Ports.storeConfig (Encode.encode 0 (toJson config))
+
+
+
+-- Json
+
+
+firstElement : Int -> ( String, Encode.Value )
+firstElement value =
+    ( "firstElement", Encode.int value )
+
+
+furtherElements : List Int -> ( String, Encode.Value )
+furtherElements values =
+    ( "furtherElements", Encode.list Encode.int values )
+
+
+toJson : Config -> Encode.Value
+toJson config =
+    Encode.object
+        [ ( "poolA", factorPoolToJson config.poolA )
+        , ( "poolB", factorPoolToJson config.poolB )
+        , ( "timeoutInSeconds", Encode.int config.timeoutInSeconds )
+        , ( "reverseChallenges", Encode.bool config.reverseChallenges )
+        , ( "show", Encode.bool config.show )
+        ]
+
+
+factorPoolToJson : FactorPool -> Encode.Value
+factorPoolToJson pool =
+    Encode.object
+        [ firstElement pool.firstElement
+        , furtherElements pool.furtherElements
+        , ( "changes", Encode.string pool.changes )
+        ]
