@@ -5,6 +5,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes as Attributes exposing (attribute, class, id, name, placeholder, size, type_, value)
 import Html.Events exposing (..)
+import Json.Decode as Decode exposing (Decoder, bool, field, int, map3, map5)
 import Json.Encode as Encode
 import List exposing (range)
 import Ports
@@ -16,6 +17,7 @@ import Time
 -- MAIN
 
 
+main : Program (Maybe String) Model Msg
 main =
     Browser.element
         { init = init
@@ -27,7 +29,7 @@ main =
 
 
 -- MODEL
--- Maybe because we wan't to allow each at input, which could be empty.
+-- Maybe because we want to allow each at input, which could be empty.
 
 
 type alias Challenge =
@@ -104,10 +106,6 @@ setPoolB pool config =
 setConfig : Config -> Model -> Model
 setConfig newConfig model =
     { model | config = newConfig }
-
-
-
--- TODO niels 08.08.2020: Config must become persistent.
 
 
 type alias Config =
@@ -209,19 +207,15 @@ challengeGen factorPoolA factorPoolB =
         (randomFactor factorPoolB)
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    -- TODO niels 08.08.2020: Local-Storage must be added.
-    -- https://elmprogramming.com/saving-app-state.html
-    -- https://package.elm-lang.org/packages/billstclair/elm-localstorage/latest/
+init : Maybe String -> ( Model, Cmd Msg )
+init flags =
     let
-        listA =
-            range 3 14
-
-        listB =
-            range 10 14
+        config =
+            Maybe.withDefault
+                (Config (FactorPool 2 (range 3 14) "") (FactorPool 1 (range 10 14) "") 20 False False)
+                (fromJson flags)
     in
-    ( Model (Config (FactorPool 2 listA "") (FactorPool 1 listB "") 20 False False) Maybe.Nothing 0 []
+    ( Model config Maybe.Nothing 0 []
     , Cmd.none
     )
 
@@ -603,3 +597,51 @@ factorPoolToJson pool =
         , furtherElements pool.furtherElements
         , ( "changes", Encode.string pool.changes )
         ]
+
+
+fromJson : Maybe String -> Maybe Config
+fromJson configJsonMB =
+    case configJsonMB of
+        Just configJson ->
+            case Decode.decodeString configDecoder configJson of
+                Ok config ->
+                    Just config
+
+                Err _ ->
+                    Nothing
+
+        Nothing ->
+            Nothing
+
+
+configDecoder : Decoder Config
+configDecoder =
+    map5 Config
+        (field "poolA" factorPoolDecoder)
+        (field "poolB" factorPoolDecoder)
+        timeoutInSecondsDecoder
+        reverseChallengesDecoder
+        showDecoder
+
+
+factorPoolDecoder : Decoder FactorPool
+factorPoolDecoder =
+    map3 FactorPool
+        (field "firstElement" Decode.int)
+        (field "furtherElements" (Decode.list Decode.int))
+        (field "changes" Decode.string)
+
+
+showDecoder : Decoder Bool
+showDecoder =
+    field "show" bool
+
+
+reverseChallengesDecoder : Decoder Bool
+reverseChallengesDecoder =
+    field "reverseChallenges" bool
+
+
+timeoutInSecondsDecoder : Decoder Int
+timeoutInSecondsDecoder =
+    field "timeoutInSeconds" int

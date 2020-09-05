@@ -5,11 +5,13 @@ where you can train the multiplication table,
 in German "Einmaleins". You can test it [online](http://opensource21.github.io/elmaleins/)
 
 ## Known Bugs
-- You can't save the config
 - reverse-mode must be implemented
 
 ## Future Features
 - Prevent duplicate challenges
+
+## TODO
+The file is pretty large seems time to split the whole stuff.  
 
 ## How to run
 - Development with reactor doesn't work anymore see 
@@ -29,3 +31,6 @@ or with elm-live
 Copy everything from public into your preferred webspace.
 
 Open the index.html in your browser. If you want to work with reactor you must use
+
+## Useful ressources
+ https://elmprogramming.com/saving-app-state.html
