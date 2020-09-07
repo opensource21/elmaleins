@@ -5,7 +5,6 @@ where you can train the multiplication table,
 in German "Einmaleins". You can test it [online](http://opensource21.github.io/elmaleins/)
 
 ## Known Bugs
-- reverse-mode must be implemented
 
 ## Future Features
 - Prevent duplicate challenges

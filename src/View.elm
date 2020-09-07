@@ -45,7 +45,14 @@ showConfiguration model =
                     [ span [ class "input-group-text" ] [ text " s Zeit " ]
                     ]
                 , div [ class "input-group-text" ]
-                    [ input [ type_ "checkbox", attribute "aria-label" "Umgekehrt", Attributes.checked model.config.reverseChallenges, onClick (ChangeReverse (not model.config.reverseChallenges)) ] []
+                    [ input
+                        [ type_ "checkbox"
+                        , attribute "aria-label" "Umgekehrt"
+                        , Attributes.readonly (not (model.currentChallenge == Nothing))
+                        , Attributes.checked model.config.reverseChallenges
+                        , onClick (ChangeReverse (not model.config.reverseChallenges))
+                        ]
+                        []
                     ]
                 , div [ class "input-group-append" ]
                     [ span [ class "input-group-text" ] [ text " Umgekehrt" ]
@@ -110,40 +117,55 @@ showMaybeChallenge model =
         Nothing ->
             text ""
 
-        Just c ->
-            showCurrentChallenge c model.remainingTime
+        Just challenge ->
+            showCurrentChallenge challenge model.remainingTime model.config.reverseChallenges
 
 
-
--- TODO niels 17.08.2020: Reverse must be implemented.
-
-
-showCurrentChallenge : Challenge -> Int -> Html Msg
-showCurrentChallenge challenge remainingTime =
+showCurrentChallenge : Challenge -> Int -> Bool -> Html Msg
+showCurrentChallenge challenge remainingTime reverse =
     div [ id "challenge" ]
         [ h2 [] [ text "Aufgabe" ]
         , p [] [ text ("Noch " ++ String.fromInt remainingTime ++ " Sekunden") ]
-        , div [ class "input-group", class "input-group-sm", class "mb-3" ]
-            [ div [ class "input-group-prepend" ]
-                [ span [ class "input-group-text" ] [ text (maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = ") ]
-                ]
-            , input
-                [ type_ "number"
-                , class "form-control"
-                , Attributes.min "2"
-                , Attributes.max "900"
-                , size 3
-                , name "result"
-                , attribute "aria-label" "Ergebnis"
-                , value (maybeIntToString challenge.result)
-                , onInput (Result challenge)
-                ]
-                []
-            , div [ class "input-group-append" ]
-                [ button [ type_ "button", class "btn", class "btn-success", name "next", onClick (Solved challenge) ] [ text "Abgeben" ]
-                ]
+        , if reverse then
+            showReverseChallenge challenge
+
+          else
+            showNormalChallenge challenge
+        ]
+
+
+showNormalChallenge : Challenge -> Html Msg
+showNormalChallenge challenge =
+    div [ class "input-group", class "input-group-sm", class "mb-3" ]
+        [ div [ class "input-group-prepend" ]
+            [ span [ class "input-group-text" ] [ text (maybeIntToString challenge.faktorA ++ " x " ++ maybeIntToString challenge.faktorB ++ " = ") ]
+            ]
+        , numberInput "result" "Ergebnis" challenge.result (Result challenge)
+        , div [ class "input-group-append" ]
+            [ button [ type_ "button", class "btn", class "btn-success", name "next", onClick (Solved challenge) ] [ text "Abgeben" ]
             ]
         ]
+
+
+showReverseChallenge : Challenge -> Html Msg
+showReverseChallenge challenge =
+    div [ class "input-group", class "input-group-sm", class "mb-3" ]
+        [ numberInput "faktorA" "FaktorA" challenge.faktorA (FaktorA challenge)
+        , div [ class "input-group-append" ]
+            [ span [ class "input-group-text" ] [ text " x " ] ]
+        , numberInput "faktorB" "faktorB" challenge.faktorB (FaktorB challenge)
+        , div [ class "input-group-append" ]
+            [ span [ class "input-group-text" ] [ text (" = " ++ maybeIntToString challenge.result) ] ]
+        , div [ class "input-group-append" ]
+            [ button [ type_ "button", class "btn", class "btn-success", name "next", onClick (Solved challenge) ] [ text "Abgeben" ]
+            ]
+        ]
+
+
+numberInput : String -> String -> Maybe Int -> (String -> Msg) -> Html Msg
+numberInput attributName label startValue msg =
+    input [ type_ "number", class "form-control", Attributes.min "2", Attributes.max "900", size 3, name attributName, attribute "aria-label" label, value (maybeIntToString startValue), onInput msg ]
+        []
 
 
 showResults : Model -> Html Msg

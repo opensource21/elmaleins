@@ -33,6 +33,8 @@ type Msg
     | Tick Challenge Time.Posix
     | Solved Challenge
     | Result Challenge String
+    | FaktorA Challenge String
+    | FaktorB Challenge String
     | ShowConfig Config
     | HideConfig Config
     | ChangeTimeout String
